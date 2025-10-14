@@ -178,4 +178,5 @@ int main(void)
 
 	printf("\n[DEBUG] -> Affichage de l'arbre\r\n");
 	afficherArbre(racine);
+
 }
