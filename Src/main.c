@@ -1,16 +1,12 @@
-#include <stm32g031xx.h>
+#include <stm32f446xx.h>
 #include "main.h"
 #include "gpio.h"
+#include "usart.h"
 #include "timer.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-
-int __io_putchar(int ch) {
-	USART2->DR = ch;
-	while( (USART2->SR & USART_SR_TXE)==0 );
-}
 
 #define TAILLE_MAX_COMPRESS 500
 
@@ -60,6 +56,7 @@ int main(void)
 {
 	GPIO_Init();
 	SYSTICK_Init();
+	USART2_Init();
 
 	// Texte non compressé
 	uint8_t texte[] = "aaaabbbccd";

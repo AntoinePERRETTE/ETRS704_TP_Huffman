@@ -2,6 +2,7 @@
 #include <stm32f446xx.h>
 #include "main.h"
 #include "usart.h"
+#include "util.h"
 
 
 void USART2_Init(void){
