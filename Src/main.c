@@ -122,6 +122,12 @@ void triArbre(struct noeud * arbre[256], uint32_t taille) {
 	}
 }
 
+struct noeud * getAddress(struct noeud * ptrNoeud, uint8_t caractere) {
+	if(ptrNoeud->c == caractere) return ptrNoeud;
+	else if(ptrNoeud->droite != NULL) return getAddress(ptrNoeud->droite, caractere);
+	else if(ptrNoeud->gauche != NULL) return getAddress(ptrNoeud->gauche, caractere);
+}
+
 int main(void)
 {
 	GPIO_Init();
@@ -144,7 +150,7 @@ int main(void)
 	// Nombre de caractère différent dans le texte non compréssé
 	//uint32_t nbrCaractereDifferent = 0;
 
-	// Nombre de noeuds
+	// Nombre de noeuds avec caractère
 	uint8_t nbrNoeuds = 0;
 
 	// Arbre de Huffman
@@ -179,4 +185,5 @@ int main(void)
 	printf("\n[DEBUG] -> Affichage de l'arbre\r\n");
 	afficherArbre(racine);
 
+	struct noeud * n = getAddress(racine, 'c');
 }
