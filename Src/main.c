@@ -34,7 +34,7 @@ void afficherTabCaractere(uint32_t tab[256]) {
 }
 
 void afficherTabArbreHuffman(struct noeud* arbre[256], uint32_t taille) {
-    printf("\n[DEBUG] -> Affichage des noeud générés:\r\n");
+    printf("\n[DEBUG] -> Affichage des noeuds générés:\r\n");
     for(uint32_t i = 0; i < taille; i++) {
         if (arbre[i] != NULL) {
             printf("noeud %d : c = %c, occurence = %d, code = %X, tailleCode = %d\r\n", i, arbre[i]->c, arbre[i]->occurence, arbre[i]->code, arbre[i]->tailleCode);
@@ -46,9 +46,10 @@ void afficherTabArbreHuffman(struct noeud* arbre[256], uint32_t taille) {
 
 void afficherArbre(struct noeud * ptrNoeud) {
 	if(ptrNoeud->droite == NULL && ptrNoeud->gauche == NULL) {
-		printf("->[Noeud : %c ; occurence : %d]\r\n", ptrNoeud->c, ptrNoeud->occurence);
+		printf("->[N : %c ; Occ : %d ; code = %X]\0338\n", ptrNoeud->c, ptrNoeud->occurence, ptrNoeud->code);
 	} else {
-		printf("->[Noeud : %c ; occurence : %d]\0337->[Noeud : %c ; occurence : %d]\0338\n", ptrNoeud->c, ptrNoeud->occurence, ptrNoeud->droite->c, ptrNoeud->droite->occurence);
+		printf("->[N : %c ; Occ : %d ; code = %X]\0337", ptrNoeud->c, ptrNoeud->occurence, ptrNoeud->code);
+		afficherArbre(ptrNoeud->droite);
 		afficherArbre(ptrNoeud->gauche);
 	}
 }
@@ -94,14 +95,31 @@ struct noeud * creerArbre(struct noeud * arbre[256], uint32_t taille){
 	return racine;
 }
 
-uint8_t comparerNoeud(struct noeud * n1, struct noeud * n2) {
-	if (n1->occurence < n2->occurence) return -1;
-	else if (n1->occurence > n2->occurence) return 1;
-	else return 0;
+void creerCode(struct noeud * ptrNoeud, uint32_t code, uint32_t taille) {
+	if(ptrNoeud->droite == NULL && ptrNoeud->gauche == NULL) {
+		ptrNoeud->tailleCode = taille;
+		ptrNoeud->code = code;
+		printf("%c \t code : %d \t taille : %d \r\n", ptrNoeud->c, ptrNoeud->code, ptrNoeud->tailleCode);
+	} else {
+		//On va a droite (on injecte un 0 à droite dans le code)
+		creerCode(ptrNoeud->droite, code << 1, taille + 1);
+		//On va a gauche (on injecte un 1 à droite)
+		creerCode(ptrNoeud->gauche, (code << 1) + 1, taille + 1);
+	}
 }
 
 void triArbre(struct noeud * arbre[256], uint32_t taille) {
-	qsort((void *) arbre, taille, sizeof(struct noeud *), comparerNoeud);
+	struct noeud * n = NULL;
+
+	for(uint8_t i = 0; i < taille-1; i++) {
+		for(uint8_t j = 0; j < taille-1; j++) {
+			if(arbre[j]->occurence > arbre[j+1]->occurence) {
+				n = arbre[j];
+				arbre[j] = arbre[j+1];
+				arbre[j+1] = n;
+			}
+		}
+	}
 }
 
 int main(void)
@@ -112,6 +130,7 @@ int main(void)
 
 	// Texte non compressé
 	uint8_t texte[] = "aaaabbbccd";
+	//uint8_t texte[] = "Une banane";
 
 	// Texte compressé
 	//uint8_t texteCompress[TAILLE_MAX_COMPRESS];
@@ -138,7 +157,7 @@ int main(void)
 
 	nbrNoeuds = creerFeuille(arbreHuffman, tabCaractere);
 
-	if(nbrNoeuds == 0) printf("\n[ERROR] -> Erreur lors de la création des feuilles\r\n");
+	if(nbrNoeuds == 0) printf("\n[ERROR] -> Erreur lors de la creation des feuilles\r\n");
 
 	afficherTabArbreHuffman(arbreHuffman, nbrNoeuds);
 
@@ -152,7 +171,10 @@ int main(void)
 
 	racine = creerArbre(arbreHuffman, nbrNoeuds);
 
-	if(racine == NULL) printf("\n[ERROR] -> Erreur lors de la création de l'arbre\r\n");
+	if(racine == NULL) printf("\n[ERROR] -> Erreur lors de la creation de l'arbre\r\n");
+
+	printf("\n[DEBUG] -> Creation des code binaires\r\n");
+	creerCode(racine, 0, 0);
 
 	printf("\n[DEBUG] -> Affichage de l'arbre\r\n");
 	afficherArbre(racine);
