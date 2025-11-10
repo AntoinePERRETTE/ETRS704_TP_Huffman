@@ -132,6 +132,8 @@ int main(void)
 	//struct noeud * n = getAddress(racine, 'c');
     afficherCaractereEtCode(racine, texte);
 
+    printf("\n[DEBUG] -> Compression du texte, création de l'entete, envoi du fichier final\r\n\n");
+
     nbrCaractereCompresseTotal = compresse(texte, texteCompress, racine);
 
     creerFichier(fichierFinal, texteCompress, racine, nbrCaractereCompresseTotal, nbrCaractereTotal, tabCaractere);
@@ -143,8 +145,10 @@ int main(void)
 
     //Description du fichier reçu
     afficherEnTete(fichierReçu);
-    uint16_t tailleDeLEntete = fichierReçu[0] + (fichierReçu[1] << 8);
-    uint16_t tailleDuFichierCompresse = fichierReçu[2] + (fichierReçu[3] << 8);
-    uint16_t tailleFichierOrigine = fichierReçu[4] + (fichierReçu[5] << 8);
 
+    uint16_t tailleDeLEntete = fichierReçu[0] + (fichierReçu[1] << 8);
+
+    uint16_t tailleDuFichierCompresse = fichierReçu[2] + (fichierReçu[3] << 8);
+
+    uint16_t tailleFichierOrigine = fichierReçu[4] + (fichierReçu[5] << 8);
 }
