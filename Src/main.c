@@ -38,7 +38,7 @@ void afficherTabArbreHuffman(struct noeud* arbre[256], uint32_t taille) {
     printf("\n[DEBUG] -> Affichage des noeuds générés:\r\n");
     for(uint32_t i = 0; i < taille; i++) {
         if (arbre[i] != NULL) {
-            printf("noeud %d : c = %c, occurence = %d, code = %b, tailleCode = %d\r\n", i, arbre[i]->c, arbre[i]->occurence, arbre[i]->code, arbre[i]->tailleCode);
+            printf("noeud %d : c = %c, occurence = %d, code = %X, tailleCode = %d\r\n", i, arbre[i]->c, arbre[i]->occurence, arbre[i]->code, arbre[i]->tailleCode);
         } else {
             printf("noeud %d n'existe pas\r\n", i);
         }
@@ -47,12 +47,29 @@ void afficherTabArbreHuffman(struct noeud* arbre[256], uint32_t taille) {
 
 void afficherArbre(struct noeud * ptrNoeud) {
 	if(ptrNoeud->droite == NULL && ptrNoeud->gauche == NULL) {
-		printf("->[N : %c ; Occ : %d ; code = %b]\0338\n", ptrNoeud->c, ptrNoeud->occurence, ptrNoeud->code);
+		printf("->[N : %c ; Occ : %d ; code = %X]\0338\n", ptrNoeud->c, ptrNoeud->occurence, ptrNoeud->code);
 	} else {
-		printf("->[N : %c ; Occ : %d ; code = %b]\0337", ptrNoeud->c, ptrNoeud->occurence, ptrNoeud->code);
+		printf("->[N : %c ; Occ : %d ; code = %X]\0337", ptrNoeud->c, ptrNoeud->occurence, ptrNoeud->code);
 		afficherArbre(ptrNoeud->droite);
 		afficherArbre(ptrNoeud->gauche);
 	}
+}
+
+void afficherEnTete(uint8_t *fichier) {
+    //Affichage de la taille de l'entête
+    printf("[DEBUG] -> l'entete a pour taille : %d\r\n", (int) fichier[0] + (fichier[1] << 8));
+
+    //Affichage de la taille du fichier compressé
+    printf("[DEBUG] -> le fichier compresse a pour taille : %d\r\n", (int) fichier[2] + (fichier[3] << 8));
+
+    //Affichage du nombre total de caractère dans le fichier d'origine
+    printf("[DEBUG] -> le fichier original contient %d caractere\r\n", (int) fichier[4] + (fichier[5] << 8));
+
+    //Affichage de chaque caractere, de son code et de la taille de ce code
+    for(uint16_t i = 6; i < (fichier[0] + (fichier[1] << 8) - 9); i += 9) {
+    	printf("[DEBUG] -> Le caractere %c a pour code %X, de taille %d\r\n", fichier[i], fichier[i+1] + (fichier[i+2] << 8) + (fichier[i+3] << 16) + (fichier[i+4] << 24),
+    																				fichier[i+5] + (fichier[i+6] << 8) + (fichier[i+7] << 16) + (fichier[i+8] << 24));
+    }
 }
 
 uint8_t creerFeuille(struct noeud * arbre[256], uint32_t tab[256]) {
@@ -100,7 +117,7 @@ void creerCode(struct noeud * ptrNoeud, uint32_t code, uint32_t taille) {
 	if(ptrNoeud->droite == NULL && ptrNoeud->gauche == NULL) {
 		ptrNoeud->tailleCode = taille;
 		ptrNoeud->code = code;
-		printf("%c \t code : %b \t taille : %d \r\n", ptrNoeud->c, ptrNoeud->code, ptrNoeud->tailleCode);
+		printf("%c \t code : %X \t taille : %d \r\n", ptrNoeud->c, ptrNoeud->code, ptrNoeud->tailleCode);
 	} else {
 		//On va a gauche (on injecte un 0 à droite dans le code)
 		creerCode(ptrNoeud->gauche, code << 1, taille + 1);
@@ -109,7 +126,6 @@ void creerCode(struct noeud * ptrNoeud, uint32_t code, uint32_t taille) {
 	}
 }
 
-/*
 void triArbre(struct noeud * arbre[256], uint32_t taille) {
 	struct noeud * n = NULL;
 
@@ -122,40 +138,6 @@ void triArbre(struct noeud * arbre[256], uint32_t taille) {
 			}
 		}
 	}
-}
-*/
-
-void triArbre(struct noeud * arbre[256], uint32_t tailleDeLArbre) {
-    struct sceau {
-        struct noeud * pile[256];
-        uint16_t tailleDeLaPile;
-    };
-
-    struct sceau listeDeSceaux[16] = {{{NULL}, 0}};
-
-    uint16_t i = 0;
-    uint16_t j = 0;
-    uint8_t chiffre = 0;
-    int8_t shiftValue = 24;
-
-    while(shiftValue >= 0) {
-        // On trie selon les chiffres de poid à partir du plus fort
-        for(i = 0; i < tailleDeLArbre; i++) {
-            chiffre = arbre[i]->occurence >> shiftValue;
-
-            listeDeSceaux[chiffre].pile[ listeDeSceaux[chiffre].tailleDeLaPile ] = arbre[i];
-            listeDeSceaux[chiffre].tailleDeLaPile++;
-        }
-
-        i = 0;
-        for(j = 0; j < 16; j++) {
-            for(;listeDeSceaux[j].tailleDeLaPile != 0; listeDeSceaux[j].tailleDeLaPile--) {
-                arbre[i] = listeDeSceaux[j].pile[ listeDeSceaux[j].tailleDeLaPile-1 ];
-                i++;
-            }
-        }
-        shiftValue -= 8;
-    }
 }
 
 struct noeud * getAddress(struct noeud * racine, uint8_t caractere) {
@@ -174,7 +156,7 @@ void afficherCaractereEtCode(struct noeud * racine, uint8_t * texte) {
     struct noeud * ptrNoeud = NULL;
     while(*texte != 0) {
         ptrNoeud = getAddress(racine, *texte);
-        if (ptrNoeud != NULL) printf("[DEBUG] -> Le caractere %d à pour code %b\r\n", (uint8_t) *texte, ptrNoeud->code);
+        if (ptrNoeud != NULL) printf("[DEBUG] -> Le caractere %d à pour code %X\r\n", (uint8_t) *texte, ptrNoeud->code);
         else printf("\r\n[DEBUG] -> Le caractere %d n'est pas dans l'arbre", (uint8_t) *texte);
         texte++;
     }
@@ -217,11 +199,11 @@ uint32_t compresse(uint8_t * texte, uint8_t texteCompress[TAILLE_MAX_COMPRESS], 
 }
 
 void creerFichier(uint8_t fichier[], uint8_t texteCompress[], struct noeud * racine, uint16_t tailleFichierCompresse, uint16_t nbrCaractereTotal, uint32_t tab[256]) {
-   fichier[2] = tailleFichierCompresse & 0x0F;
-   fichier[3] = tailleFichierCompresse & 0xF0;
+   fichier[2] = tailleFichierCompresse & 0xFF;
+   fichier[3] = (tailleFichierCompresse & 0xFF00) >> 8;
 
-   fichier[4] = nbrCaractereTotal & 0x0F;
-   fichier[5] = nbrCaractereTotal & 0xF0;
+   fichier[4] = nbrCaractereTotal & 0x00FF;
+   fichier[5] = (nbrCaractereTotal & 0xFF00) >> 8;
 
    uint16_t index = 6;
    struct noeud * ptrNoeud = NULL;
@@ -231,33 +213,33 @@ void creerFichier(uint8_t fichier[], uint8_t texteCompress[], struct noeud * rac
            ptrNoeud = getAddress(racine, i);
            fichier[index] = i;
 
-           fichier[++index] = ptrNoeud->code & 0x000F;
-           fichier[++index] = ptrNoeud->code & 0x00F0;
-           fichier[++index] = ptrNoeud->code & 0x0F00;
-           fichier[++index] = ptrNoeud->code & 0xF000;
+           fichier[++index] = (ptrNoeud->code & 0x000000FF);
+           fichier[++index] = (ptrNoeud->code & 0x0000FF00) >> 8;
+           fichier[++index] = (ptrNoeud->code & 0x00FF0000) >> 16;
+           fichier[++index] = (ptrNoeud->code & 0xFF00000) >> 24;
 
-           fichier[++index] = ptrNoeud->tailleCode & 0x000F;
-           fichier[++index] = ptrNoeud->tailleCode & 0x00F0;
-           fichier[++index] = ptrNoeud->tailleCode & 0x0F00;
-           fichier[++index] = ptrNoeud->tailleCode & 0xF000;
+           fichier[++index] = (ptrNoeud->tailleCode & 0x000000FF);
+           fichier[++index] = (ptrNoeud->tailleCode & 0x0000FF00) >> 8;
+           fichier[++index] = (ptrNoeud->tailleCode & 0x00FF0000) >> 16;
+           fichier[++index] = (ptrNoeud->tailleCode & 0xFF000000) >> 24;
 
            index++;
        }
    }
-   fichier[index] = 2;  //Start of Text
-   index++;
 
    for(uint16_t i = index; (i - index) < tailleFichierCompresse; i++) {
        fichier[i] = texteCompress[i - index];
    }
    index += tailleFichierCompresse;
 
-   fichier[0] = index & 0x0F;
-   fichier[1] = index & 0xF0;
+   fichier[0] = index & 0x00FF;
+   fichier[1] = (index & 0xFF00) >> 8;
 }
 
 int main(void)
 {
+	GPIO_Init();
+	USART2_Init();
 	// Texte non compressé
 	// uint8_t texte[] = "aaaabbbccd";
 	uint8_t texte[] = "Une banane";
@@ -281,6 +263,8 @@ int main(void)
 	struct noeud* arbreHuffman[256] = {NULL};
 
     uint8_t fichierFinal[1000] = {0};
+
+    uint8_t fichierReçu[1000] = {0};
 
 	printf("\r\n\n[DEBUG] -> Calcul des occurences\r\n");
 	occurence(texte, tabCaractere);
@@ -316,13 +300,17 @@ int main(void)
 
     nbrCaractereCompresseTotal = compresse(texte, texteCompress, racine);
 
-    for(uint32_t i = 0; i <= nbrCaractereCompresseTotal; i++) {
-        printf("%b\r\n", texteCompress[i]);
-    }
-
     creerFichier(fichierFinal, texteCompress, racine, nbrCaractereCompresseTotal, nbrCaractereTotal, tabCaractere);
 
+    //Transmission
     for(uint16_t i = 0; i < TAILLE_MAX_COMPRESS; i++) {
-        printf("%X/", fichierFinal[i]);
+    	fichierReçu[i] = fichierFinal[i];
     }
+
+    //Description du fichier reçu
+    afficherEnTete(fichierReçu);
+    uint16_t tailleDeLEntete = fichierReçu[0] + (fichierReçu[1] << 8);
+    uint16_t tailleDuFichierCompresse = fichierReçu[2] + (fichierReçu[3] << 8);
+    uint16_t tailleFichierOrigine = fichierReçu[4] + (fichierReçu[5] << 8);
+
 }
