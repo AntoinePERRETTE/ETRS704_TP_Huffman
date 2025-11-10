@@ -109,6 +109,7 @@ void creerCode(struct noeud * ptrNoeud, uint32_t code, uint32_t taille) {
 	}
 }
 
+/*
 void triArbre(struct noeud * arbre[256], uint32_t taille) {
 	struct noeud * n = NULL;
 
@@ -121,6 +122,40 @@ void triArbre(struct noeud * arbre[256], uint32_t taille) {
 			}
 		}
 	}
+}
+*/
+
+void triArbre(struct noeud * arbre[256], uint32_t tailleDeLArbre) {
+    struct sceau {
+        struct noeud * pile[256];
+        uint16_t tailleDeLaPile;
+    };
+
+    struct sceau listeDeSceaux[16] = {{{NULL}, 0}};
+
+    uint16_t i = 0;
+    uint16_t j = 0;
+    uint8_t chiffre = 0;
+    int8_t shiftValue = 24;
+
+    while(shiftValue >= 0) {
+        // On trie selon les chiffres de poid à partir du plus fort
+        for(i = 0; i < tailleDeLArbre; i++) {
+            chiffre = arbre[i]->occurence >> shiftValue;
+
+            listeDeSceaux[chiffre].pile[ listeDeSceaux[chiffre].tailleDeLaPile ] = arbre[i];
+            listeDeSceaux[chiffre].tailleDeLaPile++;
+        }
+
+        i = 0;
+        for(j = 0; j < 16; j++) {
+            for(;listeDeSceaux[j].tailleDeLaPile != 0; listeDeSceaux[j].tailleDeLaPile--) {
+                arbre[i] = listeDeSceaux[j].pile[ listeDeSceaux[j].tailleDeLaPile-1 ];
+                i++;
+            }
+        }
+        shiftValue -= 8;
+    }
 }
 
 struct noeud * getAddress(struct noeud * racine, uint8_t caractere) {
